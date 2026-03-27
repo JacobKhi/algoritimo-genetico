@@ -126,9 +126,9 @@ public class AlgoritimoGenetico {
                 if (!jaExisteNaLista && (melhor == null || candidato.getCusto() < melhor.getCusto())) {
                     melhor = candidato;
                 }
-
-                elite[i] = melhor;
             }
+
+            elite[i] = melhor;
         }
 
         return elite;
@@ -188,7 +188,7 @@ public class AlgoritimoGenetico {
         while (melhorou) {
             melhorou = false;
 
-            for (int i = 1; i < melhorRota.length - 1; i++) {
+            for (int i = 0; i < melhorRota.length - 1; i++) {
                 for (int j = i + 1; j < melhorRota.length; j++) {
 
                     // inverte o trecho entre i e j
