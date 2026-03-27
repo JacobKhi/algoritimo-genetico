@@ -55,22 +55,20 @@ public class AlgoritimoGenetico {
         }
 
         // Preenche o restante com a ordem do pai2
+        boolean[] presente = new boolean[tamanho];
+        for (int i = ponto1; i <= ponto2; i++) {
+            presente[filho[i]] = true;
+        }
+
         int indiceFilho = (ponto2 + 1) % tamanho;
         int indicePai2 = (ponto2 + 1) % tamanho;
 
         while (filho[indiceFilho] == -1) {
             int cidade = pai2.getRota()[indicePai2];
 
-            boolean jaExiste = false;
-            for (int i = ponto1; i <= ponto2; i++) {
-                if (filho[i] == cidade) {
-                    jaExiste = true;
-                    break;
-                }
-            }
-
-            if (!jaExiste) {
+            if (!presente[cidade]) {
                 filho[indiceFilho] = cidade;
+                presente[cidade] = true;
                 indiceFilho = (indiceFilho + 1) % tamanho;
             }
 
@@ -106,32 +104,12 @@ public class AlgoritimoGenetico {
     }
 
     private Individuo[] selecionarElite(Populacao populacao, int quantidadeDeElite) {
-        Individuo[] elite = new Individuo[quantidadeDeElite];
-
-        for (int i = 0; i < quantidadeDeElite; i++) {
-            Individuo melhor = null;
-
-            for (int j = 0; j < populacao.getTamanho(); j++) {
-                Individuo candidato = populacao.getIndividuo(j);
-
-                // Ignora quem ta na lista elite ja
-                boolean jaExisteNaLista = false;
-                for (int k = 0; k < i; k++) {
-                    if (elite[k] == candidato) {
-                        jaExisteNaLista = true;
-                        break;
-                    }
-                }
-
-                if (!jaExisteNaLista && (melhor == null || candidato.getCusto() < melhor.getCusto())) {
-                    melhor = candidato;
-                }
-            }
-
-            elite[i] = melhor;
+        Individuo[] todos = new Individuo[populacao.getTamanho()];
+        for (int i = 0; i < populacao.getTamanho(); i++) {
+            todos[i] = populacao.getIndividuo(i);
         }
-
-        return elite;
+        Arrays.sort(todos, (a, b) -> Integer.compare(a.getCusto(), b.getCusto()));
+        return Arrays.copyOfRange(todos, 0, quantidadeDeElite);
     }
 
     public Individuo evoluir(
@@ -142,6 +120,9 @@ public class AlgoritimoGenetico {
             int quantidadeElite
     ) {
         Populacao populacaoAtual = populacao;
+        int geracoesSemMelhora = 0;
+        int melhorCustoGlobal = selecionarElite(populacaoAtual, 1)[0].getCusto();
+        double taxaMutacaoAtual = taxaMutacao;
 
         for (int geracao = 0; geracao < numeroGeracoes; geracao++) {
             Individuo[] novaPopulacao = new Individuo[populacaoAtual.getTamanho()];
@@ -155,7 +136,10 @@ public class AlgoritimoGenetico {
             // preenche o restante com filhos
             for (int i = quantidadeElite; i < novaPopulacao.length; i++) {
                 Individuo pai1 = selecaoPorTorneio(populacaoAtual);
-                Individuo pai2 = selecaoPorTorneio(populacaoAtual);
+                Individuo pai2;
+                do {
+                    pai2 = selecaoPorTorneio(populacaoAtual);
+                } while (pai2 == pai1);
 
                 Individuo filho;
 
@@ -167,14 +151,30 @@ public class AlgoritimoGenetico {
                 }
 
                 // aplica mutação
-                if (random.nextDouble() < taxaMutacao) {
+                if (random.nextDouble() < taxaMutacaoAtual) {
                     filho = inverseMutation(filho);
                 }
+
+                // refina o filho com busca local
+                filho = doisOpt(filho);
 
                 novaPopulacao[i] = filho;
             }
 
             populacaoAtual = new Populacao(novaPopulacao, grafo);
+
+            // atualiza mutação adaptativa
+            int melhorCustoGeracao = selecionarElite(populacaoAtual, 1)[0].getCusto();
+            if (melhorCustoGeracao < melhorCustoGlobal) {
+                melhorCustoGlobal = melhorCustoGeracao;
+                geracoesSemMelhora = 0;
+                taxaMutacaoAtual = taxaMutacao;
+            } else {
+                geracoesSemMelhora++;
+                if (geracoesSemMelhora >= 50) {
+                    taxaMutacaoAtual = Math.min(taxaMutacaoAtual * 2, 0.5);
+                }
+            }
         }
 
         return selecionarElite(populacaoAtual, 1)[0];
