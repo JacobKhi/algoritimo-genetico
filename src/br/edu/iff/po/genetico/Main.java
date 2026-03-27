@@ -30,7 +30,7 @@ public class Main {
         Individuo melhorComOpt = ag.doisOpt(melhor);
 
         try {
-            BufferedWriter writer = new BufferedWriter(new FileWriter("saida.txt"));
+            BufferedWriter writer = new BufferedWriter(new FileWriter("solucao.txt"));
             writer.write(melhorComOpt.getCusto() + "\n");
             writer.write(formatarRota(melhorComOpt.getRota()) + "\n");
             writer.close();
