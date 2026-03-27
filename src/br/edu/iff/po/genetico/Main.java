@@ -42,12 +42,20 @@ public class Main {
     // Converte os índices internos (começando em 0) para os índices do enunciado (começando em 1)
     // Exemplo: [0, 2, 3, 1] → [1, 3, 4, 2]
     private static String formatarRota(int[] rota) {
+        // Encontra a posição da cidade 0 (vértice 1) para rotacionar o ciclo
+        int inicio = 0;
+        for (int i = 0; i < rota.length; i++) {
+            if (rota[i] == 0) {
+                inicio = i;
+                break;
+            }
+        }
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < rota.length; i++) {
-            sb.append(rota[i] + 1);
-            if (i < rota.length - 1)
-                sb.append(" ");
+            sb.append(rota[(inicio + i) % rota.length] + 1);
+            sb.append(" ");
         }
+        sb.append("1");
         return sb.toString();
     }
 
